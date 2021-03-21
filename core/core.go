@@ -2,7 +2,6 @@ package core
 
 import (
 	"fmt"
-	"io"
 	"time"
 
 	"github.com/pkg/errors"
@@ -29,20 +28,3 @@ func NewEvent(eventType string, data []byte) (*Event, error) {
 		Data:      data,
 	}, nil
 }
-
-type EventStore interface {
-	WriteEvent(e *Event)
-	GetEventsFrom(offset int) []*Event
-}
-
-type Broker interface {
-	AcceptEvent(e *Event)
-}
-
-type EventSender interface {
-	WriteEvent(e *Event, writers []io.Writer) error
-}
-
-// EventSender
-// writes to an io.Writer
-//

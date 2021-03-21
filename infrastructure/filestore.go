@@ -1,4 +1,4 @@
-package core
+package infrastructure
 
 import (
 	"io"
@@ -6,21 +6,23 @@ import (
 	"path/filepath"
 
 	"github.com/pkg/errors"
+
+	"github.com/chuckha/evtq/core"
 )
 
 type FileStore struct {
 	directory string
-	encdec    EncDec
+	encdec    core.EncDec
 	files     map[string]*os.File
-	encoders  map[string]Encoder
+	encoders  map[string]core.Encoder
 }
 
-func NewFileStore(dir string, encdec EncDec) *FileStore {
+func NewFileStore(dir string, encdec core.EncDec) *FileStore {
 	return &FileStore{
 		directory: dir,
 		encdec:    encdec,
 		files:     map[string]*os.File{},
-		encoders:  map[string]Encoder{},
+		encoders:  map[string]core.Encoder{},
 	}
 }
 
@@ -28,7 +30,7 @@ func (f *FileStore) fileName(etype string) string {
 	return filepath.Join(f.directory, etype)
 }
 
-func (f *FileStore) WriteEvent(e *Event) error {
+func (f *FileStore) WriteEvent(e *core.Event) error {
 	etype := e.EventType
 	// ensure writer exists
 	encoder, ok := f.encoders[etype]
@@ -44,24 +46,24 @@ func (f *FileStore) WriteEvent(e *Event) error {
 	return errors.WithStack(encoder.Encode(e))
 }
 
-func (f *FileStore) GetEventsFrom(eventType string, eventNumber int) ([]*Event, error) {
+func (f *FileStore) GetEventsFrom(eventType string, eventNumber int) ([]*core.Event, error) {
 	_, err := os.Stat(f.fileName(eventType))
 	if os.IsNotExist(err) {
 		return nil, nil
 	}
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 	// get a new file
 	file, err := os.Open(f.fileName(eventType))
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 	dec := f.encdec.NewDecoder(file)
-	out := []*Event{}
+	out := []*core.Event{}
 	i := 0
 	for {
-		evt := &Event{}
+		evt := &core.Event{}
 		err := dec.Decode(evt)
 		if err == io.EOF {
 			return out, nil
