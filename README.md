@@ -7,7 +7,7 @@ connectionInfo := &core.ConnectorBuilderInfo{
     Name:         "my-connector",
     EventTypes:   []string{"event-type-1", "event-type-2", "event-type-3"},
     EncodingType: infrastructure.JSONEncoding, // also supports Gob, see infrastructure/encdec.go
-    Info:         &infrastructure.LocalConnectorInfo{},
+    Info:         &infrastructure.LocalConnectorInfo{}, // also supports TCP, see infrastructure/connector_builders.go
 }
 ```
 
