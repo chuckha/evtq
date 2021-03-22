@@ -35,6 +35,8 @@ type ConnectorAdder struct {
 	offsets    OffsetRepository
 }
 
+// TODO: Change this signature to return an io.Reader for local ones and a message for remote ones telling them
+// to be listening on a localhost port for events.
 func (c *ConnectorAdder) AddConnector(connector core.Connector) error {
 	c.connectors.RegisterConnector(connector)
 
