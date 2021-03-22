@@ -28,8 +28,8 @@ func TestEventAdder_AddEvent(t *testing.T) {
 	t.Run("should dispatch events to connected listeners when new events arrive", func(tt *testing.T) {
 		mytc := &tc{
 			eventsSeen: 0,
-			offsets: []*core.Offset{
-				{"link", 0},
+			offsets: map[string]*core.Offset{
+				"link": {"link", 0},
 			},
 		}
 		evt, err := core.NewEvent("link", []byte("..."))

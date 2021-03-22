@@ -18,12 +18,19 @@ type ConnectorBuilder struct {
 }
 
 func (c *ConnectorBuilder) BuildConnector(info *core.ConnectorBuilderInfo) (core.Connector, error) {
+	o := make(map[string]*core.Offset)
+	for _, evttype := range info.EventTypes {
+		o[evttype] = core.NewOffset(evttype, 0)
+	}
 	offsets := c.OffsetRepo.GetOffsets(info.Name)
+	for _, off := range offsets {
+		o[off.EventType] = off
+	}
 	switch v := info.Info.(type) {
 	case LocalConnectorInfo:
-		return NewLocalConnector(info, offsets)
+		return NewLocalConnector(info, o)
 	case TCPConnectorInfo:
-		return NewTCPConnector(info, offsets)
+		return NewTCPConnector(info, o)
 	default:
 		return nil, errors.Errorf("unsupported info type %T", v)
 	}
@@ -40,7 +47,7 @@ type TCPConnectorInfo struct {
 
 func (t TCPConnectorInfo) Info() {}
 
-func NewTCPConnector(info *core.ConnectorBuilderInfo, offsets []*core.Offset) (core.Connector, error) {
+func NewTCPConnector(info *core.ConnectorBuilderInfo, offsets map[string]*core.Offset) (core.Connector, error) {
 	tcpInfo, ok := info.Info.(TCPConnectorInfo)
 	if !ok {
 		return nil, errors.Errorf("info needs to be of type TCPConnectorInfo, not %T", info.Info)
@@ -53,7 +60,7 @@ func NewTCPConnector(info *core.ConnectorBuilderInfo, offsets []*core.Offset) (c
 	return core.NewConnector(info.Name, conn, EncDecFactory(info.EncodingType), offsets)
 }
 
-func NewLocalConnector(info *core.ConnectorBuilderInfo, offsets []*core.Offset) (core.Connector, error) {
+func NewLocalConnector(info *core.ConnectorBuilderInfo, offsets map[string]*core.Offset) (core.Connector, error) {
 	_, ok := info.Info.(LocalConnectorInfo)
 	if !ok {
 		return nil, errors.Errorf("info needs to be of type LocalConnectorInfo, not %T", info)

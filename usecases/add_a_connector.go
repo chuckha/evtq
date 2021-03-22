@@ -1,6 +1,8 @@
 package usecases
 
 import (
+	"io"
+
 	"github.com/chuckha/evtq/core"
 )
 
@@ -37,19 +39,19 @@ type ConnectorAdder struct {
 
 // TODO: Change this signature to return an io.Reader for local ones and a message for remote ones telling them
 // to be listening on a localhost port for events.
-func (c *ConnectorAdder) AddConnector(connector core.Connector) error {
+func (c *ConnectorAdder) AddConnector(connector core.Connector) (io.Reader, error) {
 	c.connectors.RegisterConnector(connector)
 
 	for _, offset := range connector.GetOffsets() {
 		events, err := c.events.GetEventsFrom(offset.EventType, offset.LastKnownOffset)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		if err := connector.SendEvents(events...); err != nil {
-			return err
+			return nil, err
 		}
 		newOffset := core.NewOffset(offset.EventType, offset.LastKnownOffset+len(events))
 		c.offsets.UpdateOffset(connector.GetName(), newOffset)
 	}
-	return nil
+	return connector.GetReader(), nil
 }

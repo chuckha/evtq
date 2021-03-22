@@ -14,14 +14,14 @@ func (t *testlog) Debug(_ string) {}
 
 type tc struct {
 	eventsSeen int
-	offsets    []*core.Offset
+	offsets    map[string]*core.Offset
 }
 
 func (t *tc) GetName() string {
 	return "test connector"
 }
 
-func (t *tc) GetOffsets() []*core.Offset {
+func (t *tc) GetOffsets() map[string]*core.Offset {
 	return t.offsets
 }
 
@@ -32,7 +32,7 @@ func (t *tc) SendEvents(evts ...*core.Event) error {
 	return nil
 }
 
-func (t *tc) GetReadWriter() io.ReadWriter {
+func (t *tc) GetReader() io.Reader {
 	return nil
 }
 
@@ -47,11 +47,11 @@ func TestConsumerConnector_AddConnector(t *testing.T) {
 	}
 	t.Run("ensure events can be distributed after a connector is registered", func(tt *testing.T) {
 		mytc := &tc{
-			offsets: []*core.Offset{
-				{"hello", 0},
+			offsets: map[string]*core.Offset{
+				"hello": {"hello", 0},
 			},
 		}
-		if err := cc.AddConnector(mytc); err != nil {
+		if _, err := cc.AddConnector(mytc); err != nil {
 			tt.Fatal(err)
 		}
 		n, err := core.NewEvent("hello", []byte("hello world"))
@@ -66,8 +66,8 @@ func TestConsumerConnector_AddConnector(t *testing.T) {
 
 	t.Run("ensure a new connector gets all missing events", func(tt *testing.T) {
 		mytc := &tc{
-			offsets: []*core.Offset{
-				{"banana", 4},
+			offsets: map[string]*core.Offset{
+				"banana": {"banana", 4},
 			},
 		}
 		n, err := core.NewEvent("banana", []byte("hello world"))
@@ -79,7 +79,7 @@ func TestConsumerConnector_AddConnector(t *testing.T) {
 				tt.Fatal(err)
 			}
 		}
-		if err := cc.AddConnector(mytc); err != nil {
+		if _, err := cc.AddConnector(mytc); err != nil {
 			tt.Fatal(err)
 		}
 		if mytc.eventsSeen != 6 {

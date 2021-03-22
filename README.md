@@ -18,6 +18,6 @@ b := evtq.NewBroker(...)
 // In the case of local, this returns a reader and an optional system message
 // In the case of tcp, this returns a nil reader and a system message alerting the receiver to listen on a port for events.
 // TODO: this is not yet finished
-reader, systemMessage, err := b.AddConnectorFromInfo(connectionInfo)
+reader, systemMessage, err := b.AddConnector(connectionInfo)
 
 ```

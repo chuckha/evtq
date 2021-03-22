@@ -53,12 +53,12 @@ type Decoder interface {
 
 type Connector interface {
 	GetName() string
-	GetOffsets() []*Offset
+	GetOffsets() map[string]*Offset
 	SendEvents(e ...*Event) error
-	GetReadWriter() io.ReadWriter
+	GetReader() io.Reader
 }
 
-func NewConnector(name string, inout io.ReadWriter, encdec EncDec, offsets []*Offset) (*connector, error) {
+func NewConnector(name string, inout io.ReadWriter, encdec EncDec, offsets map[string]*Offset) (*connector, error) {
 	if name == "" {
 		return nil, errors.New("connectors require names")
 	}
@@ -77,18 +77,18 @@ type connector struct {
 	Name    string
 	IO      io.ReadWriter
 	EncDec  EncDec
-	Offsets []*Offset
+	Offsets map[string]*Offset
 }
 
 func (c *connector) GetName() string {
 	return c.Name
 }
 
-func (c *connector) GetOffsets() []*Offset {
+func (c *connector) GetOffsets() map[string]*Offset {
 	return c.Offsets
 }
 
-func (c *connector) GetReadWriter() io.ReadWriter {
+func (c *connector) GetReader() io.Reader {
 	return c.IO
 }
 

@@ -1,6 +1,8 @@
 package evtq
 
 import (
+	"io"
+
 	"github.com/chuckha/evtq/core"
 	"github.com/chuckha/evtq/usecases"
 )
@@ -17,10 +19,13 @@ func NewBroker(adapter Adapter, useCases UseCases) *Broker {
 	}
 }
 
-func (b *Broker) AddConnector(info *core.ConnectorBuilderInfo) error {
+// AddConnector returns an io.Reader, but that's only to be used in the case of a
+// local connector. Don't use it if you've asked for a TCP connector. Listen to the
+// socket instead.
+func (b *Broker) AddConnector(info *core.ConnectorBuilderInfo) (io.Reader, error) {
 	connector, err := b.Adapter.AddConnectorFromInfo(info)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	return b.UseCases.AddConnector(connector)
 }
@@ -39,16 +44,16 @@ type Adapter interface {
 }
 
 type UseCases interface {
-	AddConnector(connector core.Connector) error
+	AddConnector(connector core.Connector) (io.Reader, error)
 	AddEvent(evt *core.Event) error
 }
 
-type connectorBuilder interface {
+type ConnectorBuilder interface {
 	BuildConnector(info *core.ConnectorBuilderInfo) (core.Connector, error)
 }
 
 type BrokerAdapter struct {
-	connectorBuilder
+	ConnectorBuilder
 }
 
 func (b *BrokerAdapter) AddConnectorFromInfo(info *core.ConnectorBuilderInfo) (core.Connector, error) {
