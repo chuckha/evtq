@@ -17,7 +17,7 @@ func NewBroker(adapter Adapter, useCases UseCases) *Broker {
 	}
 }
 
-func (b *Broker) AddConnectorFromInfo(info *core.ConnectorBuilderInfo) error {
+func (b *Broker) AddConnector(info *core.ConnectorBuilderInfo) error {
 	connector, err := b.Adapter.AddConnectorFromInfo(info)
 	if err != nil {
 		return err
@@ -25,26 +25,41 @@ func (b *Broker) AddConnectorFromInfo(info *core.ConnectorBuilderInfo) error {
 	return b.UseCases.AddConnector(connector)
 }
 
+func (b *Broker) AddEvent(eventType string, data []byte) error {
+	evt, err := b.Adapter.AddEvent(eventType, data)
+	if err != nil {
+		return err
+	}
+	return b.UseCases.AddEvent(evt)
+}
+
 type Adapter interface {
-	AddConnectorFromInfo(info *core.ConnectorBuilderInfo) (*core.Connector, error)
+	AddConnectorFromInfo(info *core.ConnectorBuilderInfo) (core.Connector, error)
+	AddEvent(eventType string, data []byte) (*core.Event, error)
 }
 
 type UseCases interface {
-	AddConnector(connector *core.Connector) error
+	AddConnector(connector core.Connector) error
+	AddEvent(evt *core.Event) error
 }
 
 type connectorBuilder interface {
-	BuildConnector(info *core.ConnectorBuilderInfo) (*core.Connector, error)
+	BuildConnector(info *core.ConnectorBuilderInfo) (core.Connector, error)
 }
 
 type BrokerAdapter struct {
 	connectorBuilder
 }
 
-func (b *BrokerAdapter) AddConnectorFromInfo(info *core.ConnectorBuilderInfo) (*core.Connector, error) {
+func (b *BrokerAdapter) AddConnectorFromInfo(info *core.ConnectorBuilderInfo) (core.Connector, error) {
 	return b.BuildConnector(info)
 }
 
+func (b *BrokerAdapter) AddEvent(eventType string, data []byte) (*core.Event, error) {
+	return core.NewEvent(eventType, data)
+}
+
 type BrokerUseCases struct {
-	*usecases.ConsumerConnector
+	*usecases.ConnectorAdder
+	*usecases.EventAdder
 }

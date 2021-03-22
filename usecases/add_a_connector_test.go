@@ -40,7 +40,7 @@ func TestConsumerConnector_AddConnector(t *testing.T) {
 	cr := infrastructure.NewConnectorsRegistry(infrastructure.WithLog(&testlog{}))
 	eg := infrastructure.NewMemoryStore()
 	or := infrastructure.NewOffsetRepository()
-	cc := &ConsumerConnector{
+	cc := &ConnectorAdder{
 		connectors: cr,
 		events:     eg,
 		offsets:    or,

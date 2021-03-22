@@ -10,6 +10,12 @@ type log interface {
 	Debug(string)
 }
 
+type defaultLog struct{}
+
+func (d *defaultLog) Debug(s string) {
+	fmt.Println(s)
+}
+
 type EventSender interface {
 	SendEvents(*core.Event) error
 }
@@ -32,6 +38,7 @@ func NewConnectorsRegistry(options ...ConnectorsRegistryOption) *ConnectorsRegis
 	cr := &ConnectorsRegistry{
 		connectors:      map[string]core.Connector{},
 		connectorsByEvt: map[string]map[string]core.Connector{},
+		log:             &defaultLog{},
 	}
 	for _, o := range options {
 		o(cr)

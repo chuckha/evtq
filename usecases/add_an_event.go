@@ -12,6 +12,13 @@ type EventDistributor interface {
 	DistributeEvent(e *core.Event)
 }
 
+func NewEventAdder(ew EventWriter, ed EventDistributor) *EventAdder {
+	return &EventAdder{
+		ew: ew,
+		ed: ed,
+	}
+}
+
 type EventAdder struct {
 	ew EventWriter
 	ed EventDistributor

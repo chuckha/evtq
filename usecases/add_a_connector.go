@@ -5,7 +5,7 @@ import (
 )
 
 type ConsumerBuilder interface {
-	Build(*core.ConnectorBuilderInfo) (*core.Connector, error)
+	Build(*core.ConnectorBuilderInfo) (core.Connector, error)
 }
 
 // ConnectorRegistry must live in memory due to I/O and possible network connections or shared buffer
@@ -21,13 +21,21 @@ type OffsetRepository interface {
 	UpdateOffset(name string, offset *core.Offset)
 }
 
-type ConsumerConnector struct {
+func NewConnectorAdder(connectors ConnectorRegistry, events EventGetter, offsets OffsetRepository) *ConnectorAdder {
+	return &ConnectorAdder{
+		connectors: connectors,
+		events:     events,
+		offsets:    offsets,
+	}
+}
+
+type ConnectorAdder struct {
 	connectors ConnectorRegistry
 	events     EventGetter
 	offsets    OffsetRepository
 }
 
-func (c *ConsumerConnector) AddConnector(connector core.Connector) error {
+func (c *ConnectorAdder) AddConnector(connector core.Connector) error {
 	c.connectors.RegisterConnector(connector)
 
 	for _, offset := range connector.GetOffsets() {
