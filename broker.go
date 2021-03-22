@@ -2,7 +2,6 @@ package evtq
 
 import (
 	"github.com/chuckha/evtq/core"
-	"github.com/chuckha/evtq/infrastructure"
 	"github.com/chuckha/evtq/usecases"
 )
 
@@ -34,10 +33,16 @@ type UseCases interface {
 	AddConnector(connector *core.Connector) error
 }
 
-type BrokerAdapter struct{}
+type connectorBuilder interface {
+	BuildConnector(info *core.ConnectorBuilderInfo) (*core.Connector, error)
+}
+
+type BrokerAdapter struct {
+	connectorBuilder
+}
 
 func (b *BrokerAdapter) AddConnectorFromInfo(info *core.ConnectorBuilderInfo) (*core.Connector, error) {
-	return infrastructure.BuildConnector(info)
+	return b.BuildConnector(info)
 }
 
 type BrokerUseCases struct {

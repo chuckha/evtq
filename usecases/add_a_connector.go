@@ -8,35 +8,38 @@ type ConsumerBuilder interface {
 	Build(*core.ConnectorBuilderInfo) (*core.Connector, error)
 }
 
-// ConnectorRepository must live in memory due to I/O and possible network connections or shared buffer
-type ConnectorRepository interface {
-	RegisterConnector(connector *core.Connector)
-	DistributeEvent(e *core.Event) error
+// ConnectorRegistry must live in memory due to I/O and possible network connections or shared buffer
+type ConnectorRegistry interface {
+	RegisterConnector(connector core.Connector)
 }
 
-type EventStore interface {
-	WriteEvent(e *core.Event) error
+type EventGetter interface {
 	GetEventsFrom(eventType string, offset int) ([]*core.Event, error) // TODO: change interface to accept *Offset
 }
 
-type ConsumerConnector struct {
-	ConnectorRepository
-	EventStore
+type OffsetRepository interface {
+	UpdateOffset(name string, offset *core.Offset)
 }
 
-func (c *ConsumerConnector) AddConnector(connector *core.Connector) error {
-	// connect the connector
-	c.ConnectorRepository.RegisterConnector(connector)
+type ConsumerConnector struct {
+	connectors ConnectorRegistry
+	events     EventGetter
+	offsets    OffsetRepository
+}
 
-	for _, offset := range connector.Offsets {
-		events, err := c.EventStore.GetEventsFrom(offset.EventType, offset.LastKnownOffset)
+func (c *ConsumerConnector) AddConnector(connector core.Connector) error {
+	c.connectors.RegisterConnector(connector)
+
+	for _, offset := range connector.GetOffsets() {
+		events, err := c.events.GetEventsFrom(offset.EventType, offset.LastKnownOffset)
 		if err != nil {
 			return err
 		}
 		if err := connector.SendEvents(events...); err != nil {
 			return err
 		}
+		newOffset := core.NewOffset(offset.EventType, offset.LastKnownOffset+len(events))
+		c.offsets.UpdateOffset(connector.GetName(), newOffset)
 	}
-	// update offset database
 	return nil
 }

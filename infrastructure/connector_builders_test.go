@@ -16,7 +16,7 @@ func TestLocalConnector(t *testing.T) {
 		EventTypes:   []string{},
 		EncodingType: GOBEncoding,
 		Info:         LocalConnectorInfo{},
-	}, []*core.Offset{})
+	}, []*core.Offset{core.NewOffset("none", 1)})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -42,7 +42,7 @@ func TestLocalConnector(t *testing.T) {
 				donec <- struct{}{}
 			}
 		}
-	}(lc.IO, readyc, closec, donec)
+	}(lc.GetReadWriter(), readyc, closec, donec)
 	evt, err := core.NewEvent("test", []byte("hello world"))
 	if err != nil {
 		t.Fatal(err)
@@ -95,7 +95,7 @@ func TestNewTCPConnector(t *testing.T) {
 			Network: "tcp",
 			Address: ":4000",
 		},
-	}, []*core.Offset{})
+	}, []*core.Offset{core.NewOffset("test1", 0)})
 	if err != nil {
 		t.Fatal(err)
 	}

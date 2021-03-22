@@ -1,6 +1,7 @@
 package infrastructure
 
 import (
+	"io"
 	"testing"
 
 	"github.com/pkg/errors"
@@ -10,7 +11,7 @@ import (
 
 type testlog struct{}
 
-func (t *testlog) debug(_ string) {}
+func (t *testlog) Debug(_ string) {}
 
 type myconnector struct {
 	name        string
@@ -28,6 +29,9 @@ func (m *myconnector) GetOffsets() []*core.Offset {
 
 func (m *myconnector) SendEvents(e ...*core.Event) error {
 	return m.failSendErr
+}
+func (m *myconnector) GetReadWriter() io.ReadWriter {
+	return nil
 }
 func newMyConnector(name string, failSendErr error, offsets []*core.Offset) *myconnector {
 	return &myconnector{

@@ -7,7 +7,7 @@ import (
 )
 
 type log interface {
-	debug(string)
+	Debug(string)
 }
 
 type EventSender interface {
@@ -15,8 +15,8 @@ type EventSender interface {
 }
 
 type ConnectorsRegistry struct {
-	connectors      map[string]Connector
-	connectorsByEvt map[string]map[string]Connector
+	connectors      map[string]core.Connector
+	connectorsByEvt map[string]map[string]core.Connector
 	log             log
 }
 
@@ -30,8 +30,8 @@ func WithLog(log log) ConnectorsRegistryOption {
 
 func NewConnectorsRegistry(options ...ConnectorsRegistryOption) *ConnectorsRegistry {
 	cr := &ConnectorsRegistry{
-		connectors:      map[string]Connector{},
-		connectorsByEvt: map[string]map[string]Connector{},
+		connectors:      map[string]core.Connector{},
+		connectorsByEvt: map[string]map[string]core.Connector{},
 	}
 	for _, o := range options {
 		o(cr)
@@ -39,17 +39,11 @@ func NewConnectorsRegistry(options ...ConnectorsRegistryOption) *ConnectorsRegis
 	return cr
 }
 
-type Connector interface {
-	GetName() string
-	GetOffsets() []*core.Offset
-	SendEvents(e ...*core.Event) error
-}
-
-func (c *ConnectorsRegistry) RegisterConnector(connector Connector) {
+func (c *ConnectorsRegistry) RegisterConnector(connector core.Connector) {
 	c.connectors[connector.GetName()] = connector
 	for _, offset := range connector.GetOffsets() {
 		if _, ok := c.connectorsByEvt[offset.EventType]; !ok {
-			c.connectorsByEvt[offset.EventType] = make(map[string]Connector)
+			c.connectorsByEvt[offset.EventType] = make(map[string]core.Connector)
 		}
 		c.connectorsByEvt[offset.EventType][connector.GetName()] = connector
 	}
@@ -59,10 +53,10 @@ func (c *ConnectorsRegistry) RegisterConnector(connector Connector) {
 // It does not return an error ever as that may impede event flow.
 // Instead, remove the problematic connectors
 func (c *ConnectorsRegistry) DistributeEvent(e *core.Event) {
-	toRemove := []Connector{}
+	toRemove := []core.Connector{}
 	for _, connector := range c.connectorsByEvt[e.EventType] {
 		if err := connector.SendEvents(e); err != nil {
-			c.log.debug(fmt.Sprintf("encountered an error with connector %s\n: %v", connector.GetName(), err))
+			c.log.Debug(fmt.Sprintf("encountered an error with connector %s\n: %v", connector.GetName(), err))
 			toRemove = append(toRemove, connector)
 		}
 	}
@@ -71,7 +65,7 @@ func (c *ConnectorsRegistry) DistributeEvent(e *core.Event) {
 	}
 }
 
-func (c *ConnectorsRegistry) removeConnector(remove Connector) {
+func (c *ConnectorsRegistry) removeConnector(remove core.Connector) {
 	delete(c.connectors, remove.GetName())
 	for _, connectorMap := range c.connectorsByEvt {
 		delete(connectorMap, remove.GetName())
