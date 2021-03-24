@@ -8,14 +8,14 @@ import (
 )
 
 type Broker struct {
-	Adapter
-	UseCases
+	adapter
+	useCases
 }
 
-func NewBroker(adapter Adapter, useCases UseCases) *Broker {
+func NewBroker(adapter adapter, useCases useCases) *Broker {
 	return &Broker{
-		Adapter:  adapter,
-		UseCases: useCases,
+		adapter:  adapter,
+		useCases: useCases,
 	}
 }
 
@@ -23,27 +23,27 @@ func NewBroker(adapter Adapter, useCases UseCases) *Broker {
 // local connector. Don't use it if you've asked for a TCP connector. Listen to the
 // socket instead.
 func (b *Broker) AddConnector(info *core.ConnectorBuilderInfo) (io.Reader, error) {
-	connector, err := b.Adapter.AddConnectorFromInfo(info)
+	connector, err := b.adapter.AddConnectorFromInfo(info)
 	if err != nil {
 		return nil, err
 	}
-	return b.UseCases.AddConnector(connector)
+	return b.useCases.AddConnector(connector)
 }
 
 func (b *Broker) AddEvent(eventType string, data []byte) error {
-	evt, err := b.Adapter.AddEvent(eventType, data)
+	evt, err := b.adapter.AddEvent(eventType, data)
 	if err != nil {
 		return err
 	}
-	return b.UseCases.AddEvent(evt)
+	return b.useCases.AddEvent(evt)
 }
 
-type Adapter interface {
+type adapter interface {
 	AddConnectorFromInfo(info *core.ConnectorBuilderInfo) (core.Connector, error)
 	AddEvent(eventType string, data []byte) (*core.Event, error)
 }
 
-type UseCases interface {
+type useCases interface {
 	AddConnector(connector core.Connector) (io.Reader, error)
 	AddEvent(evt *core.Event) error
 }
